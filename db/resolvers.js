@@ -94,12 +94,13 @@ const resolvers = {
         },
         obtenerNew: async(_,{id},ctx) => {
             try {
-                const ExisteNew = await New.findById(id);
-                if(!existeClub){
+                const existeNew = await New.findById(id).populate('club');
+                console.log(existeNew);
+                if(!existeNew){
                     throw new Error('La noticia no existe');
                 }
 
-                return ExisteNew;
+                return existeNew;
             } catch (error) {
                 throw new Error(error)
             }
@@ -244,8 +245,16 @@ const resolvers = {
             }
         },
         crearNew: async(_,{input}, ctx) => {
+            console.log(ctx);
             try {
-                const newNew = new New(input);
+                newInput = {
+                    title: input.tite,
+                    text: input.text,
+                    club: input.club ? input.club : ctx.club.id,
+                    publisher: ctx.id
+                }
+
+                const newNew = new New(input.publisher ? input : newInput);
                 newNew.save();
 
                 return newNew

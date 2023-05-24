@@ -5,6 +5,7 @@ const typeDefs = gql`
     enum Role {
         ADMINISTRADOR
         USUARIO
+        SUPERADMINISTRADOR
     }
 
     type Photo {
@@ -47,7 +48,7 @@ const typeDefs = gql`
         title: String
         text: String
         club: Club
-        publisher: Club
+        publisher: Usuario
     }
 
     type Token {
@@ -91,7 +92,7 @@ const typeDefs = gql`
         title: String!
         text: String!
         club: ID!
-        publisher: ID!
+        publisher: ID
     }
 
     input AuthInput {
