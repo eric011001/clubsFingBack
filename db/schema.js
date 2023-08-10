@@ -32,13 +32,16 @@ const typeDefs = gql`
         photos: [Photo]
         schedule: [Schedule]
     }
-
+    type CountRecords {
+        name: String
+        count: Int
+    }
     type Record {
         id: ID
         name: String
         enrollment: String
         career: String
-        semester: Int
+        semester: String
         phone: String
         club: Club
     }
@@ -55,11 +58,25 @@ const typeDefs = gql`
         token: String
     }
 
+    type Temporada {
+        name: String
+        startDate: String
+        endDate: String
+        registro: Boolean
+    }
+
+    input TemporadaInput {
+        id: ID
+        name: String
+        startDate: String
+        endDate: String
+    }
+
     input UsuarioInput {
         name: String!
         email: String!
-        password: String!
-        role: Role!
+        password: String
+        role: Role
         club: ID
     }
 
@@ -83,7 +100,7 @@ const typeDefs = gql`
         name: String!
         enrollment: String!
         career: String!
-        semester: Int!
+        semester: String!
         phone: String!
         club: ID!
     }
@@ -91,7 +108,7 @@ const typeDefs = gql`
     input NewInput {
         title: String!
         text: String!
-        club: ID!
+        club: ID
         publisher: ID
     }
 
@@ -124,6 +141,18 @@ const typeDefs = gql`
         obtenerNew(id: ID!): New
         obtenerNewsClub(id: ID): [New]
         obtenerNewsMiClub: [New]
+
+
+        obtenerNumerosRecords: [CountRecords]
+        obtenerNumerosNotices: [CountRecords]
+        obtenerNumerosRecordsClubs: Int
+        
+
+        #Temporadas
+
+        obtenerTemporadas: [Temporada]
+        obtenerTemporada(id: ID!): Temporada
+        obtenerTemporadaActual: Temporada
     }
 
     type Mutation {
@@ -146,6 +175,11 @@ const typeDefs = gql`
         crearNew(input: NewInput): New
         actualizaNew(id: ID!, input: NewInput): New
         eliminaNew(id: ID!): String
+
+        #temporadas
+        crearTempodada(input: TemporadaInput): Temporada
+        actualizarTemporada(id: ID!, input: TemporadaInput): Temporada
+        eliminaTemporada(id: ID!): String
     }
 
 `;

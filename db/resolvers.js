@@ -7,10 +7,19 @@ const Usuario = require('../models/Usuario');
 const Club = require('../models/Club');
 const Record = require('../models/Record');
 const New = require('../models/New');
+const Temporada = require('../models/Temporada');
+
+const SUPERADMINISTRADOR = 'SUPERADMINISTRADOR';
+const USUARIO = 'USUARIO';
 
 const crearTokenUsuario = (usuario, secreta, expiresIn) => {
     const {id, name, email, club, role} = usuario;
-    return jwt.sign({id, name, email, club, role},secreta, { expiresIn } );
+    
+    let clubNew = Object.assign({}, club);
+    if(club){
+        clubNew._doc.id = club._id;
+    }
+    return jwt.sign({id, name, email, club: clubNew._doc, role},secreta, { expiresIn } );
 
 }
 
@@ -18,7 +27,7 @@ const resolvers = {
     Query: {
         obtenerUsuarios: async (_,{},ctx) => {
             const usuarios = await Usuario.find({}).populate('club');
-            console.log(usuarios);
+            
             return usuarios;
         },
         obtenerUsuario: async(_,{id},ctx) => {
@@ -29,6 +38,7 @@ const resolvers = {
             return usuario;
         },
         obtenerMiUsuario: async(_,{},ctx) => {
+            console.log(ctx);
             return ctx;
         },
         obtenerClubs: async(_,{},ctx) => {
@@ -53,7 +63,8 @@ const resolvers = {
         },
         obtenerRegistros: async (_,{},ctx) => {
             try {
-                const records = await Record.find({});
+                const records = await Record.find({}).populate('club');
+                console.log(records);
                 return(records);
             } catch (error) {
                 throw new Error(error);
@@ -61,7 +72,7 @@ const resolvers = {
         },
         obtenerRegistrosClub: async(_,{id},ctx) => {
             try {
-                const records = await Record.find({'club': id})
+                const records = await Record.find({'club': id}).populate('club')
                 return(records);
             } catch (error) {
                 throw new Error(error);
@@ -70,7 +81,7 @@ const resolvers = {
         obtenerRegistrosMiClub: async(_,{}, ctx) => {
             const {club} = ctx;
             try {
-                const records = await Record.find({'club': club.id})
+                const records = await Record.find({'club': club.id}).populate('club')
                 return(records);
             } catch (error) {
                 throw new Error(error);
@@ -86,7 +97,7 @@ const resolvers = {
         },
         obtenerNews: async(_,{},ctx) => {
             try {
-                const news = await New.find({});
+                const news = await New.find({}).populate('club');
                 return news;
             } catch (error) {
                 throw new Error(error);
@@ -95,7 +106,7 @@ const resolvers = {
         obtenerNew: async(_,{id},ctx) => {
             try {
                 const existeNew = await New.findById(id).populate('club');
-                console.log(existeNew);
+                
                 if(!existeNew){
                     throw new Error('La noticia no existe');
                 }
@@ -120,6 +131,124 @@ const resolvers = {
             } catch (error) {
                 throw new Error(error);
             }
+        },
+        obtenerNumerosRecords: async(_,{},ctx) => {
+            try {
+                const records = await Record.aggregate([
+                    {
+                      $group: {
+                        _id: '$club',
+                        clubName: { $first: '$club' },
+                        count: { $sum: 1 }
+                      }
+                    },
+                    {
+                      $lookup: {
+                        from: 'clubs',
+                        localField: 'clubName',
+                        foreignField: '_id',
+                        as: 'clubInfo'
+                      }
+                    },
+                    {
+                      $project: {
+                        _id: 0,
+                        clubName: '$clubInfo.name',
+                        count: 1
+                      }
+                    }
+                  ]);
+                  let tempRecords = [];
+                  records.forEach(record => {
+                    tempRecords.push({count: record.count, name: record.clubName[0]});
+                  })
+                  return tempRecords
+            } catch (error) {
+                throw new Error(error)
+            }
+        },
+        obtenerNumerosNotices: async(_,{},ctx) => {
+            try {
+                const news = await New.aggregate([
+                    {
+                      $group: {
+                        _id: '$club',
+                        clubName: { $first: '$club' },
+                        count: { $sum: 1 }
+                      }
+                    },
+                    {
+                      $lookup: {
+                        from: 'clubs',
+                        localField: 'clubName',
+                        foreignField: '_id',
+                        as: 'clubInfo'
+                      }
+                    },
+                    {
+                      $project: {
+                        _id: 0,
+                        clubName: '$clubInfo.name',
+                        count: 1
+                      }
+                    }
+                  ]);
+                  let tempRecords = [];
+                  news.forEach(notice => {
+                    tempRecords.push({count: notice.count, name: notice.clubName[0]});
+                  })
+                  return tempRecords
+            } catch (error) {
+                throw new Error(error)
+            }
+        },
+        obtenerNumerosRecordsClubs: async(_,{},ctx) => {
+            
+            try {
+                const counts = await Record.aggregate([
+                    {
+                      $match: {
+                        club: ctx.club._id
+                      }
+                    },
+                    {
+                      $group: {
+                        _id: '$club',
+                        clubName: { $first: '$club' },
+                        count: { $sum: 1 }
+                      }
+                    },
+                    {
+                      $lookup: {
+                        from: 'clubs',
+                        localField: 'clubName',
+                        foreignField: '_id',
+                        as: 'clubInfo'
+                      }
+                    },
+                    {
+                      $project: {
+                        _id: 0,
+                        clubName: '$clubInfo.name',
+                        count: 1
+                      }
+                    }
+                  ])
+                  console.log(counts);
+            } catch (error) {
+                throw new Error(error)
+            }
+        },
+        obtenerTemporadas: async(_, {}, ctx) => {
+            if(!ctx) {
+                throw new Error('No tienes acceso');
+            }
+            const temporadas = await Temporada.find({});
+            return temporadas
+        },
+        obtenerTemporada: async(_,{id}, ctx) => {
+            if(!ctx || ctx.role !== 'SUPERADMINISTRADOR');
+
         }
 
     },
@@ -143,7 +272,7 @@ const resolvers = {
         autenticarUsuario: async(_,{input},ctx) => {
             const {email,password} = input;9
             const usuarioExiste = await Usuario.findOne({email}).populate('club');
-            console.log(usuarioExiste);
+
             if(!usuarioExiste){
                 throw new Error("El usuario no existe");
             }
@@ -156,6 +285,7 @@ const resolvers = {
             }
         },
         actualizarUsuario: async(_,{id, input},ctx) => {
+            console.log(input);
             const  existeUsuario = await Usuario.findById(id);
             if(!existeUsuario){
                 throw new Error("El usuario no existe");
@@ -206,7 +336,7 @@ const resolvers = {
                 }
 
                 await Club.findByIdAndDelete(id);
-                return('Clun eliminado');
+                return('Club eliminado');
             } catch (error) {
                 throw new Error(error);
             }
@@ -245,10 +375,9 @@ const resolvers = {
             }
         },
         crearNew: async(_,{input}, ctx) => {
-            console.log(ctx);
             try {
                 newInput = {
-                    title: input.tite,
+                    title: input.title,
                     text: input.text,
                     club: input.club ? input.club : ctx.club.id,
                     publisher: ctx.id

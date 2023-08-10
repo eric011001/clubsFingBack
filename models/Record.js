@@ -28,6 +28,10 @@ const RecordSchema = mongoose.Schema({
     club: {
         type: mongoose.Schema.Types.ObjectId,
         ref: ('Club')
+    },
+    temporada: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: ('Temporada')
     }
 });
 
