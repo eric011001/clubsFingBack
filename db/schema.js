@@ -90,8 +90,8 @@ const typeDefs = gql`
     }
 
     input ClubInput {
-        name: String!
-        description: String!
+        name: String
+        description: String
         photos: [PhotoInput]
         schedule: [ScheduleInput]
     }

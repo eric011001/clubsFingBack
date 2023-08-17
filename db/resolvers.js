@@ -156,7 +156,13 @@ const resolvers = {
                         clubName: '$clubInfo.name',
                         count: 1
                       }
-                    }
+                    },
+                    {
+                        $sort: {
+                          count: -1, // Orden descendente por count
+                          clubName: 1 // Orden ascendente por clubName
+                        }
+                      }
                   ]);
                   let tempRecords = [];
                   records.forEach(record => {
